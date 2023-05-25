@@ -1,0 +1,129 @@
+﻿@page "/money"
+@using ToolBoxBlazor.Models;
+@using Microsoft.EntityFrameworkCore
+
+<PageTitle>Money Records</PageTitle>
+
+@using ToolBoxBlazor.Data
+@inject WeatherForecastService ForecastService
+
+<h1>Money Records</h1>
+<div class="row">
+    <div class="col-2">
+        <select class="form-select" aria-label="Default select example" @bind="SelectedType">
+            <option value="2">Coffee Balance</option>
+            <option value="3">Video Balance</option>
+        </select>
+    </div>
+    <div class="col-6">
+        <div class="input-group">
+            <span class="input-group-text">￥</span>
+            <input type="text" class="form-control" aria-label="Amount (to the nearest dollar)" @bind="InputMoney">
+        </div>
+    </div>
+    <div class="col"></div>
+    <div class="col-2">
+        <button class="btn btn-primary" @onclick="AddRecord"><span class="oi oi-plus" aria-hidden="true"></span>  Add Record</button>
+    </div>
+</div>
+
+
+@if (MoneyRecords == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Count</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var record in MoneyRecords)
+            {
+                <tr>
+                    <td>@record.Date.ToShortDateString()</td>
+                    <td>@record.Type</td>
+                    @if (record.Count > 0)
+                    {
+                        <td class="red">+@record.Count</td>
+                    }
+                    else
+                    {
+                        <td class="green">@record.Count</td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    struct MoneyRecord
+    {
+        public DateTime Date;
+        public String Type;
+        public Decimal Count;
+    }
+
+    private string SelectedType = "2";
+    private string InputMoney = "";
+    private List<MoneyRecord>? MoneyRecords;
+
+    protected override void OnInitialized()
+    {
+        GetData();
+    }
+
+    private void GetData()
+    {
+        var ctx = new ToolBoxContext();
+        var pettyMoney = ctx.PettyMoneys.ToList();
+        var pettyMoneyRecords = ctx.PettyMoneyRecords.ToList();
+        var query = from pm in pettyMoney
+                    join pmr in pettyMoneyRecords on pm.Id equals pmr.TypeId
+                    orderby pmr.Id descending
+                    select new { pmr.Date, pm.Type, pmr.Count };
+        if (!query.Any())
+        {
+            MoneyRecords = null;
+            return;
+        }
+        if (MoneyRecords == null)
+        {
+            MoneyRecords = new List<MoneyRecord>();
+        }
+        else
+        {
+            MoneyRecords.Clear();
+        }
+        foreach (var q in query)
+        {
+            MoneyRecord mr;
+            mr.Date = q.Date;
+            mr.Type = q.Type.ToUpper();
+            mr.Count = q.Count;
+            MoneyRecords.Add(mr);
+        }
+    }
+
+    private async Task AddRecord()
+    {
+        var ctx = new ToolBoxContext();
+        await ctx.PettyMoneyRecords.AddAsync(new PettyMoneyRecord()
+            {
+                Date = System.DateTime.Now,
+                TypeId = int.Parse(SelectedType),
+                Count = decimal.Parse(InputMoney)
+            });
+        var pm = ctx.PettyMoneys.Single(p => p.Id == int.Parse(SelectedType));
+        pm.Count += decimal.Parse(InputMoney);
+        await ctx.SaveChangesAsync();
+        GetData();
+    }
+}
+

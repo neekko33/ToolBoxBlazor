@@ -1,0 +1,69 @@
+﻿@page "/"   
+@using ToolBoxBlazor.Models;
+
+<PageTitle>Home</PageTitle>
+
+<h1>Hello, world!</h1>
+
+Welcome to Tool Box Blazor.
+
+<div class="cards">
+    <div class="card" style="width: 18rem;">
+        <img src="https://ts1.cn.mm.bing.net/th/id/R-C.1729cd2a045abf61bca147a5bb316ea2?rik=%2fdRManFfFE7PcQ&riu=http%3a%2f%2fwww.pc9.com%2fuploads%2f20190527%2fd8f89208f5f231848b115b896f7b1eed.jpg&ehk=rdsG5Ea5Oyz2dFceku5gp4pCCDH55qS4WTg58CXfL6I%3d&risl=&pid=ImgRaw&r=0" class="card-img-top" alt="...">
+        <div class="card-body">
+            <h5 class="card-title">Gwow Balance:</h5>
+            <p class="card-text">￥@GwowBalance</p>
+            <a href="#" class="btn btn-primary">Check Records</a>
+        </div>
+    </div>
+
+    <div class="card" style="width: 18rem;">
+        <img src="https://ts1.cn.mm.bing.net/th/id/R-C.44b9ddf2738a49b84aefeca7bba9c65e?rik=YCsy%2fQ%2fJnRrOAw&riu=http%3a%2f%2fsundun.com%2fimages%2fsingle2.jpg&ehk=gRAThzvnDzo%2fKC3LCj2WKpHbNnJKzyWVOhzdfiC1XRE%3d&risl=&pid=ImgRaw&r=0" class="card-img-top" alt="...">
+        <div class="card-body">
+            <h5 class="card-title">Coffee Balance:</h5>
+            <p class="card-text">￥@CoffeeBalance</p>
+            <a href="#" class="btn btn-primary">Check Records</a>
+        </div>
+    </div>
+
+    <div class="card" style="width: 18rem;">
+        <img src="https://img.tukuppt.com/png_preview/00/22/16/VVXQ7ayKTx.jpg!/fw/780" class="card-img-top" alt="...">
+        <div class="card-body">
+            <h5 class="card-title">Video Balance:</h5>
+            <p class="card-text">￥@VideoBalance</p>
+            <a href="#" class="btn btn-primary">Check Records</a>
+        </div>
+    </div>
+</div>
+
+<SurveyPrompt Title="How is Blazor working for you?" />
+
+@code{
+    public decimal GwowBalance;
+    public decimal CoffeeBalance;
+    public decimal VideoBalance;
+
+    protected override void OnInitialized()
+    {
+        using (var ctx = new ToolBoxContext())
+        {
+            var pettyMoney = ctx.PettyMoneys;
+            foreach (var p in pettyMoney)
+            {
+                switch (p.Type)
+                {
+                    case "gwow":
+                        GwowBalance = p.Count;
+                        break;
+                    case "coffee":
+                        CoffeeBalance = p.Count;
+                        break;
+                    case "video":
+                        VideoBalance = p.Count;
+                        break;
+                }
+            }
+        }
+
+    }
+}

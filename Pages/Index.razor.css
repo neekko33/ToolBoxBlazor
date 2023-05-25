@@ -1,0 +1,18 @@
+﻿.cards {
+    margin: 60px 0;
+    display: flex;
+}
+
+.card {
+    margin-right: 20px;
+}
+
+.card-title {
+    font-weight: bold;
+}
+
+.card-text {
+    font-weight: bold;
+    font-size: 30px;
+    color: #1b6ec2;
+}

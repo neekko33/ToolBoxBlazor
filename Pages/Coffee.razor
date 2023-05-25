@@ -1,0 +1,136 @@
+﻿@page "/coffee"
+@using ToolBoxBlazor.Models;
+
+<PageTitle>Coffee Records</PageTitle>
+
+@using ToolBoxBlazor.Data
+@inject WeatherForecastService ForecastService
+
+<h1>Video Records</h1>
+<div class="row">
+    <div class="col-8">
+        <select class="form-select" aria-label="Default select example" @bind="SelectedType">
+            @if (CoffeeTypes != null)
+            {
+                @foreach (var coffeeType in CoffeeTypes)
+                {
+                    <option value=@coffeeType.Id>@coffeeType.TypeName</option>
+                }
+            }
+
+        </select>
+    </div>
+    <div class="col"></div>
+    <div class="col-2">
+        <button class="btn btn-primary" @onclick="AddRecord"><span class="oi oi-plus" aria-hidden="true"></span>  Add Record</button>
+    </div>
+</div>
+
+
+@if (CoffeeRecords == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Type of Coffee</th>
+                <th>Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var cRecord in CoffeeRecords)
+            {
+                <tr>
+                    <td>@cRecord.Date.ToShortDateString()</td>
+                    <td>@cRecord.CoffeeType</td>
+                    @if (cRecord.Count > 0)
+                    {
+                        <td class="red">+@cRecord.Count</td>
+                    }
+                    else
+                    {
+                        <td class="green">@cRecord.Count</td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    struct CoffeeRecord
+    {
+        public DateTime Date;
+        public String CoffeeType;
+        public Decimal Count;
+    }
+
+    private List<CoffeeRecord>? CoffeeRecords;
+    private List<CoffeeType>? CoffeeTypes;
+    private string SelectedType = "1";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetData();
+    }
+
+    private async Task GetData()
+    {
+        using (var ctx = new ToolBoxContext())
+        {
+            var records = ctx.PettyMoneyRecords.Where(p => p.TypeId == 2).OrderByDescending(p => p.Id);
+            if (!records.Any())
+            {
+                CoffeeRecords = null;
+                return;
+            }
+            if (CoffeeRecords == null)
+            {
+                CoffeeRecords = new List<CoffeeRecord>();
+            }
+            else
+            {
+                CoffeeRecords.Clear();
+            }
+            CoffeeTypes = ctx.CoffeeTypes.ToList();
+            foreach (var record in records)
+            {
+                CoffeeRecord cRecord;
+                cRecord.Date = record.Date;
+                cRecord.Count = record.Count;
+                var coffeeType = CoffeeTypes.Find(item => item.Id == record.CoffeeTypeId);
+                cRecord.CoffeeType = coffeeType != null ? coffeeType.TypeName : "";
+                CoffeeRecords.Add(cRecord);
+            }
+        }
+    }
+
+    private async Task AddRecord()
+    {
+        if (CoffeeTypes == null) return;
+        using (var ctx = new ToolBoxContext())
+        {
+            var typeId = int.Parse(SelectedType);
+            var selectedType = CoffeeTypes.Find(item => item.Id == typeId);
+            if (selectedType != null)
+            {
+                await ctx.PettyMoneyRecords.AddAsync(new PettyMoneyRecord()
+                    {
+                        Date = System.DateTime.Now,
+                        TypeId = 2,
+                        CoffeeTypeId = typeId,
+                        Count = selectedType.Price
+                    });
+                var pm = ctx.PettyMoneys.Single(p => p.Id == 2);
+                pm.Count += selectedType.Price;
+                await ctx.SaveChangesAsync();
+                await GetData();
+            }
+        }
+    }
+}
+

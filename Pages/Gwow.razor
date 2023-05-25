@@ -1,0 +1,118 @@
+﻿@page "/gwow"
+@using ToolBoxBlazor.Models;
+
+<PageTitle>Gwow Records</PageTitle>
+
+@using ToolBoxBlazor.Data
+@inject WeatherForecastService ForecastService
+
+
+<h1>Gwow Records</h1>
+<div class="row">
+    <div class="col-8">
+        <div class="input-group">
+            <span class="input-group-text">￥</span>
+            <input type="text" class="form-control" aria-label="Amount (to the nearest dollar)" @bind="InputMoney">
+        </div>
+    </div>
+    <div class="col"></div>
+    <div class="col-2">
+        <button class="btn btn-primary" @onclick="AddRecord"><span class="oi oi-plus" aria-hidden="true"></span>  Add Record</button>
+    </div>
+</div>
+
+
+
+@if (GwowRecords == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Money</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var gwowRecord in GwowRecords)
+            {
+                <tr>
+                    <td>@gwowRecord.Date.ToShortDateString()</td>
+                    @if (gwowRecord.Count > 0)
+                    {
+                        <td class="red">+@gwowRecord.Count</td>
+                    }
+                    else
+                    {
+                        <td class="green">@gwowRecord.Count</td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    struct GwowRecord
+    {
+        public DateTime Date;
+        public Decimal Count;
+    }
+
+    private List<GwowRecord>? GwowRecords;
+    private string InputMoney = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetData();
+    }
+
+    private async Task GetData()
+    {
+        using (var ctx = new ToolBoxContext())
+        {
+            var records = ctx.PettyMoneyRecords.Where(p => p.TypeId == 1).OrderByDescending(p => p.Id);
+            if (!records.Any())
+            {
+                GwowRecords = null;
+                return;
+            }
+            if (GwowRecords == null)
+            {
+                GwowRecords = new List<GwowRecord>();
+            }
+            else
+            {
+                GwowRecords.Clear();
+            }
+            foreach (var record in records)
+            {
+                GwowRecord gRecord;
+                gRecord.Date = record.Date;
+                gRecord.Count = record.Count;
+                GwowRecords.Add(gRecord);
+            }
+        }
+    }
+
+    private async Task AddRecord()
+    {
+        using(var ctx = new ToolBoxContext())
+        {
+            await ctx.PettyMoneyRecords.AddAsync(new PettyMoneyRecord()
+                {
+                    Date = System.DateTime.Now,
+                    TypeId = 1,
+                    Count = decimal.Parse(InputMoney)
+                });
+            var pm = ctx.PettyMoneys.Single(p => p.Id == 1);
+            pm.Count += decimal.Parse(InputMoney);
+            await ctx.SaveChangesAsync();
+            await GetData();
+        }
+    }
+}
+

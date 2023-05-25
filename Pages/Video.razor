@@ -1,0 +1,120 @@
+﻿@page "/video"
+@using ToolBoxBlazor.Models
+
+<PageTitle>Video Records</PageTitle>
+
+@using ToolBoxBlazor.Data
+@inject WeatherForecastService ForecastService
+
+<h1>Video Records</h1>
+<div class="row">
+    <div class="col-8">
+       <input type="text" class="form-control" aria-label="Amount (to the nearest dollar)" @bind="InputVideoName">
+    </div>
+    <div class="col"></div>
+    <div class="col-2">
+        <button class="btn btn-primary" @onclick="AddRecord"><span class="oi oi-plus" aria-hidden="true"></span>  Add Record</button>
+    </div>
+</div>
+
+
+
+@if (VideoRecords == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Name</th>
+                <th>Count</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var videoRecord in VideoRecords)
+            {
+                <tr>
+                    <td>@videoRecord.Date.ToShortDateString()</td>
+                    <td>@videoRecord.VideoName</td>
+                    @if (videoRecord.Count > 0)
+                    {
+                        <td class="red">+@videoRecord.Count</td>
+                    }
+                    else
+                    {
+                        <td class="green">@videoRecord.Count</td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    struct VideoRecord
+    {
+        public DateTime Date;
+        public String? VideoName;
+        public Decimal Count;
+    }
+
+    private List<VideoRecord>? VideoRecords;
+    private const Decimal VideoPrice = -40;
+    private string InputVideoName = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetData();
+    }
+
+    private async Task GetData()
+    {
+        using (var ctx = new ToolBoxContext())
+        {
+            var records = ctx.PettyMoneyRecords.Where(p => p.TypeId == 3).OrderByDescending(p => p.Id);
+            if (!records.Any())
+            {
+                VideoRecords = null;
+                return;
+            }
+            if (VideoRecords == null)
+            {
+                VideoRecords = new List<VideoRecord>();
+            }
+            else
+            {
+                VideoRecords.Clear();
+            }
+            foreach (var record in records)
+            {
+                VideoRecord vRecord;
+                vRecord.Date = record.Date;
+                vRecord.VideoName = record.VideoName;
+                vRecord.Count = record.Count;
+                VideoRecords.Add(vRecord);
+            }
+        }
+    }
+
+    private async Task AddRecord()
+    {
+        using (var ctx = new ToolBoxContext())
+        {
+            await ctx.PettyMoneyRecords.AddAsync(new PettyMoneyRecord()
+                {
+                    Date = System.DateTime.Now,
+                    TypeId = 3,
+                    Count = VideoPrice,
+                    VideoName = InputVideoName
+                });
+            var pm = ctx.PettyMoneys.Single(p => p.Id == 3);
+            pm.Count += VideoPrice;
+            await ctx.SaveChangesAsync();
+            await GetData();
+        }
+    }
+}
+
