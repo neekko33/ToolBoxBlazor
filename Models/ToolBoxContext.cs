@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace ToolBoxBlazor.Models;
 
@@ -22,7 +23,7 @@ public partial class ToolBoxContext : DbContext
     public virtual DbSet<PettyMoneyRecord> PettyMoneyRecords { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseMySql("server=localhost;port=3306;database=tool_box;uid=root;pwd=123", Microsoft.EntityFrameworkCore.ServerVersion.Parse("8.0.33-mysql"));
+        => optionsBuilder.UseMySql(Program.Configuration.GetConnectionString("ToolBoxDatabase"), Microsoft.EntityFrameworkCore.ServerVersion.Parse("8.0.33-mysql"));
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
